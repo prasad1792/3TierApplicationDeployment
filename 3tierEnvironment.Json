@@ -1,0 +1,560 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string"
+    },
+    "SQLserverName": {
+      "type": "string"
+    },
+    "webservername": {
+     "type": "string"
+    },
+    "ntierservername": {
+     "type": "string"
+    },
+    "connectservername": {
+      "type": "string"
+    },
+    "servicebusname": {
+      "type": "string"
+    },
+    "virtualMachineSize": {
+      "type": "string"
+    },
+    "localadminUsername": {
+      "type": "string"
+    },
+    "localadminPassword": {
+      "type": "string"
+    },
+    "virtualNetworkName": {
+      "type": "string"
+    },
+
+    "virtualNetworkResourceGroup": {
+      "type": "string"
+    },
+
+    "subnetName1": {
+      "type": "string"
+    },
+
+    "subnetName2": {
+      "type": "string"
+    },
+
+    "subnetName3": {
+      "type": "string"
+    },
+
+   "domainname": {
+      "type": "string"
+    },
+
+    "DomUserName": {
+      "type": "string"
+    },
+
+    "DomPassword": {
+      "type": "string"
+    }
+ },
+    "variables": {
+        "vnetId": "[resourceId(parameters('virtualNetworkResourceGroup'),'Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+				"subnetRef1": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName1'))]",
+                "subnetRef2": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName2'))]",
+                "subnetRef3": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName3'))]"
+	},
+  "resources": [
+    {
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('webservername')[copyIndex()], '-nic')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef1')]"
+              }
+            }
+          }
+        ]
+
+      },
+      "type": "Microsoft.Network/networkInterfaces"
+    },
+
+    {
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('ntierservername')[copyIndex()], '-nic')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef2')]"
+              }
+            }
+          }
+        ]
+
+    },
+      "type": "Microsoft.Network/networkInterfaces"
+    },
+
+        {
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('servicebusname')[copyIndex()], '-nic')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef2')]"
+              }
+            }
+          }
+        ]
+
+      },
+      "type": "Microsoft.Network/networkInterfaces"
+    },
+
+
+            {
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('connectservername')[copyIndex()], '-nic')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef2')]"
+              }
+            }
+          }
+        ]
+
+      },
+      "type": "Microsoft.Network/networkInterfaces"
+    },
+
+
+            {
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('SQLserverName')[copyIndex()], '-nic')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef3')]"
+              }
+            }
+          }
+        ]
+
+      },
+      "type": "Microsoft.Network/networkInterfaces"
+    },
+
+
+    {
+      "name": "[parameters('webservername')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+          "dependsOn": [
+        
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "licenseType": "Windows_Server",
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('webservername')[copyIndex()], '-nic'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[parameters('webservername')]",
+          "adminUsername": "[parameters('localadminUsername')]",
+          "adminPassword": "[parameters('localadminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVmAgent": true
+          }
+        },
+        "storageProfile": {
+          "osDisk": {
+              "name": "[concat(parameters('webservername'), '_OsDisk')]",
+              "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "Windows-2019-Datacenter",
+            "version": "latest"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "[parameters('ntierservername')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+          "dependsOn": [
+        
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "licenseType": "Windows_Server",
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('ntierservername')[copyIndex()], '-nic'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[parameters('ntierservername')]",
+          "adminUsername": "[parameters('localadminUsername')]",
+          "adminPassword": "[parameters('localadminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVmAgent": true
+          }
+        },
+        "storageProfile": {
+          "osDisk": {
+              "name": "[concat(parameters('ntierservername'), '_OsDisk')]",
+              "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "Windows-2019-Datacenter",
+            "version": "latest"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "[parameters('servicebusname')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+          "dependsOn": [
+        
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "licenseType": "Windows_Server",
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('servicebusname')[copyIndex()], '-nic'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[parameters('servicebusname')]",
+          "adminUsername": "[parameters('localadminUsername')]",
+          "adminPassword": "[parameters('localadminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVmAgent": true
+          }
+        },
+        "storageProfile": {
+          "osDisk": {
+              "name": "[concat(parameters('servicebusname'), '_OsDisk')]",
+              "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "Windows-2019-Datacenter",
+            "version": "latest"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "[parameters('connectservername')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+          "dependsOn": [
+        
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "licenseType": "Windows_Server",
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('connectservername')[copyIndex()], '-nic'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[parameters('connectservername')]",
+          "adminUsername": "[parameters('localadminUsername')]",
+          "adminPassword": "[parameters('localadminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVmAgent": true
+          }
+        },
+        "storageProfile": {
+          "osDisk": {
+              "name": "[concat(parameters('connectservername'), '_OsDisk')]",
+              "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "Windows-2019-Datacenter",
+            "version": "latest"
+          }
+        }
+      }
+    },
+
+    {
+      "name": "[parameters('SQLserverName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+          "dependsOn": [
+        
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "licenseType": "Windows_Server",
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('SQLserverName')[copyIndex()], '-nic'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[parameters('SQLserverName')]",
+          "adminUsername": "[parameters('localadminUsername')]",
+          "adminPassword": "[parameters('localadminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVmAgent": true
+          }
+        },
+        "storageProfile": {
+          "osDisk": {
+              "name": "[concat(parameters('SQLserverName'), '_OsDisk')]",
+              "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "Windows-2019-Datacenter",
+            "version": "latest"
+          }
+        }
+      }
+    },
+
+    {
+      "comments": "Join domain - JsonADDomainExtension",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('webservername'),'/joindomain')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceid('Microsoft.Compute/virtualMachines/', parameters('webservername'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "Password": "[parameters('DomPassword')]"
+        },
+        "publisher": "Microsoft.Compute",
+        "settings": {
+          "Name": "[parameters('domainName')]",
+          "User": "[parameters('DomUserName')]",
+          "Restart": "true",
+          "Options": "3"
+       },
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3"
+      }
+    },
+
+
+    {
+      "comments": "Join domain - JsonADDomainExtension",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('ntierservername'),'/joindomain')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceid('Microsoft.Compute/virtualMachines/', parameters('ntierservername'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "Password": "[parameters('DomPassword')]"
+        },
+        "publisher": "Microsoft.Compute",
+        "settings": {
+          "Name": "[parameters('domainName')]",
+          "User": "[parameters('DomUserName')]",
+          "Restart": "true",
+          "Options": "3"
+       },
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3"
+      }
+    },
+
+   {
+      "comments": "Join domain - JsonADDomainExtension",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('servicebusname'),'/joindomain')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceid('Microsoft.Compute/virtualMachines/', parameters('servicebusname'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "Password": "[parameters('DomPassword')]"
+        },
+        "publisher": "Microsoft.Compute",
+        "settings": {
+          "Name": "[parameters('domainName')]",
+          "User": "[parameters('DomUserName')]",
+          "Restart": "true",
+          "Options": "3"
+       },
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3"
+      }
+    },
+
+    {
+      "comments": "Join domain - JsonADDomainExtension",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('connectservername'),'/joindomain')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceid('Microsoft.Compute/virtualMachines/', parameters('connectservername'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "Password": "[parameters('DomPassword')]"
+        },
+        "publisher": "Microsoft.Compute",
+        "settings": {
+          "Name": "[parameters('domainName')]",
+          "User": "[parameters('DomUserName')]",
+          "Restart": "true",
+          "Options": "3"
+       },
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3"
+      }
+    },
+
+    {
+      "comments": "Join domain - JsonADDomainExtension",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('SQLserverName'),'/joindomain')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceid('Microsoft.Compute/virtualMachines/', parameters('SQLserverName'))]"
+      ],
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "Password": "[parameters('DomPassword')]"
+        },
+        "publisher": "Microsoft.Compute",
+        "settings": {
+          "Name": "[parameters('domainName')]",
+          "User": "[parameters('DomUserName')]",
+          "Restart": "true",
+          "Options": "3"
+       },
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3"
+      }
+    }
+
+
+
+
+  ],
+    "outputs": {
+        "adminUsername": {
+            "type": "string",
+            "value": "[parameters('localadminUsername')]"
+        }
+    }
+}
